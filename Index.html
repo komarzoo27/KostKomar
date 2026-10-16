@@ -1,106 +1,53 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#166534"><title>Kost Komar — Profil Penghuni</title>
-<style>
-:root{--g:#166534;--g2:#15803d;--mint:#f0fdf4;--ink:#17231b;--muted:#66736a;--line:#e2e8e3;--bg:#f7faf7;--red:#b91c1c}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}
-header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:4}.nav{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:68px}.brand{font-size:1.15rem;font-weight:850;color:var(--g);text-decoration:none}.actions{display:flex;gap:8px}
-.btn{border:1px solid var(--line);border-radius:11px;padding:10px 14px;font-weight:700;background:#fff;color:var(--ink)}.primary{background:var(--g);color:#fff;border-color:var(--g)}.danger{color:var(--red);background:#fff1f2;border-color:#fecdd3}
-.hero{padding:44px 0 30px;background:linear-gradient(130deg,#f0fdf4,#fff 72%)}.hero h1{font-size:clamp(2rem,5vw,3.3rem);line-height:1.1;letter-spacing:-.04em;margin:13px 0}.hero p{color:var(--muted);max-width:650px;margin:0}.pill{display:inline-block;background:#dcfce7;color:var(--g);padding:5px 10px;border-radius:999px;font-weight:800;font-size:.82rem}
-main{padding:26px 0 60px}.head{display:flex;justify-content:space-between;align-items:end;gap:14px;flex-wrap:wrap}.head h2{margin:0}.muted{color:var(--muted)}.toolbar{display:flex;gap:10px;margin:18px 0}.toolbar input{flex:1;min-width:0}.field input,.field textarea,.field select,.toolbar input{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:white}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}.photo{width:100%;height:220px;object-fit:cover;background:#e8f5eb;display:block}.card-body{padding:15px}.card h3{margin:0;overflow-wrap:anywhere}.room{display:inline-block;background:var(--mint);color:var(--g);border-radius:7px;padding:3px 8px;margin-top:7px;font-size:.83rem;font-weight:750}.card p{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}.card .btn{width:100%}.empty,.status{background:#fff;border:1px dashed #cbd5ce;border-radius:15px;padding:28px;text-align:center;color:var(--muted)}
-footer{background:#fff;border-top:1px solid var(--line);padding:22px 0;color:var(--muted);font-size:.9rem}.overlay{display:none;position:fixed;inset:0;background:#09190e99;z-index:10;align-items:center;justify-content:center;padding:14px;overflow:auto}.overlay.show{display:flex}.modal{width:min(700px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px}.modal-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:15px 18px}.modal-head h2{margin:0;font-size:1.1rem}.modal-body{padding:18px}.close{font-size:1.4rem;border:1px solid var(--line);background:white;border-radius:9px;width:38px;height:38px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-weight:750;font-size:.9rem}.full{grid-column:1/-1}.field textarea{min-height:90px}.check{display:flex;gap:9px;align-items:flex-start}.notice{padding:10px 12px;border-radius:10px;margin:0 0 12px;background:#fff1f2;color:#9f1239}.notice.ok{background:#f0fdf4;color:#166534}.hidden{display:none!important}.adminrow{padding:12px;border:1px solid var(--line);border-radius:12px;background:white;margin:9px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.adminrow small{display:block;color:var(--muted)}.rowbtns{display:flex;gap:6px;flex-wrap:wrap}.rowbtns .btn{padding:7px 9px;font-size:.85rem}.profile{display:grid;grid-template-columns:220px 1fr;gap:18px}.profile img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:13px}
-@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo{height:190px}}@media(max-width:520px){.wrap{width:calc(100% - 22px)}.nav{min-height:60px}.btn{padding:9px 10px;font-size:.88rem}.hero{padding:32px 0 24px}.grid{gap:9px}.photo{height:145px}.card-body{padding:10px}.card h3{font-size:.9rem}.card p{font-size:.82rem}.room{font-size:.73rem}.toolbar{flex-direction:column}.formgrid,.profile{grid-template-columns:1fr}.full{grid-column:auto}.adminrow{align-items:flex-start;flex-direction:column}.profile img{max-height:280px;aspect-ratio:4/3}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#166534">
+  <title>Kost Komar</title>
+  <style>
+    :root{--green:#166534;--green-dark:#14532d;--mint:#f0fdf4;--ink:#17231b;--muted:#647067;--line:#dfe8e1}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#f0fdf4,#fff 65%);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink)}
+    main{width:min(560px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:clamp(24px,5vw,42px);box-shadow:0 18px 60px #163d2310}
+    .frog{font-size:2.5rem}.pill{display:inline-block;border-radius:999px;padding:5px 10px;background:#dcfce7;color:var(--green);font-weight:800;font-size:.8rem}
+    h1{margin:14px 0 8px;font-size:clamp(2rem,6vw,2.7rem);letter-spacing:-.04em;line-height:1.1}p{color:var(--muted)}
+    .btn{display:block;text-align:center;width:100%;border:0;border-radius:12px;padding:14px 18px;background:var(--green);color:white;text-decoration:none;font-weight:800;margin-top:22px}
+    .btn:hover{background:var(--green-dark)}.error{display:none;margin-top:16px;padding:12px;border-radius:12px;background:#fff1f2;color:#9f1239;font-size:.92rem}
+    .help{font-size:.85rem;border-top:1px solid var(--line);margin-top:24px;padding-top:16px}
+  </style>
+  <script src="./config.js"></script>
 </head>
 <body>
-<header><div class="wrap nav"><a href="#" class="brand" id="homeBtn">🐸 Kost Komar</a><div class="actions"><button class="btn" id="adminBtn">Login Admin</button></div></div></header>
-<section class="hero"><div class="wrap"><span class="pill">Profil Penghuni</span><h1>Kenali penghuni<br>Kost Komar.</h1><p>Direktori penghuni yang dipublikasikan oleh pengelola. Data pribadi hanya ditampilkan sesuai persetujuan penghuni.</p></div></section>
-<main class="wrap" id="publicView"><div class="head"><div><h2>Daftar penghuni</h2><div class="muted">Profil aktif yang telah disetujui untuk ditampilkan.</div></div><div class="muted"><span id="count">0</span> profil</div></div>
-<div class="toolbar"><input id="search" placeholder="Cari nama atau nomor kamar…" aria-label="Cari penghuni"><button class="btn" id="refresh">Muat ulang</button></div>
-<div id="status" class="status">Memuat daftar penghuni…</div><div id="grid" class="grid"></div><div id="empty" class="empty hidden">Belum ada profil yang dipublikasikan.</div></main>
-<main class="wrap hidden" id="adminView"><div class="head"><div><span class="pill">Area pengelola</span><h2>Dashboard admin</h2><div id="identity" class="muted">Login untuk mengelola penghuni.</div></div><div class="actions"><button class="btn" id="backBtn">Lihat website</button><button class="btn danger hidden" id="logoutBtn">Keluar</button></div></div>
-<div id="notice" class="notice hidden"></div>
-<section id="loginPanel" style="max-width:440px;margin:24px 0;background:#fff;padding:20px;border:1px solid var(--line);border-radius:16px"><h3>Login admin</h3><form id="loginForm"><div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required maxlength="254"></div><div class="field" style="margin-top:12px"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required minlength="1" maxlength="200"></div><p class="muted" style="font-size:.85rem">Password diverifikasi di backend dan tidak disimpan di browser.</p><button class="btn primary" id="loginSubmit" type="submit">Login</button></form></section>
-<section id="adminPanel" class="hidden"><div class="head"><h3>Data penghuni</h3><button class="btn primary" id="addBtn">+ Tambah penghuni</button></div><div id="adminListStatus" class="muted">Memuat…</div><div id="adminList"></div></section></main>
-<footer><div class="wrap">© <span id="year"></span> Kost Komar · Informasi ditampilkan dengan persetujuan penghuni.</div></footer>
-<div class="overlay" id="detailOverlay"><div class="modal"><div class="modal-head"><h2>Profil penghuni</h2><button class="close" data-close="detailOverlay" aria-label="Tutup">×</button></div><div class="modal-body" id="detailBody"></div></div></div>
-<div class="overlay" id="formOverlay"><div class="modal"><div class="modal-head"><h2 id="formTitle">Tambah penghuni</h2><button class="close" data-close="formOverlay" aria-label="Tutup">×</button></div><div class="modal-body"><div id="formNotice" class="notice hidden"></div><form id="residentForm"><input id="residentId" type="hidden"><div class="formgrid"><div class="field"><label for="fullName">Nama lengkap *</label><input id="fullName" required maxlength="160"></div><div class="field"><label for="roomNumber">Nomor kamar *</label><input id="roomNumber" required maxlength="40"></div><div class="field full"><label for="description">Deskripsi</label><textarea id="description" maxlength="500"></textarea></div><div class="field"><label for="statusSelect">Status</label><select id="statusSelect"><option value="ACTIVE">Aktif</option><option value="ARCHIVED">Diarsipkan</option></select></div><div class="field"><label for="photo">Foto (maksimal 1 MB)</label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"><small class="muted">JPG, PNG, WebP. File disimpan privat di Drive.</small></div><label class="check full"><input id="published" type="checkbox"><span>Publikasikan profil (pastikan penghuni menyetujui publikasi)</span></label></div><div class="actions" style="justify-content:flex-end;margin-top:16px"><button class="btn" type="button" data-close="formOverlay">Batal</button><button class="btn primary" id="saveBtn" type="submit">Simpan</button></div></form></div></div></div>
-<script>
-const $ = id => document.getElementById(id);
-const state = {token:'', email:'', publicRows:[], adminRows:[]};
-const placeholder = 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420"><rect width="100%" height="100%" fill="#e8f5eb"/><text x="50%" y="50%" text-anchor="middle" fill="#166534" font-family="sans-serif" font-size="26">Kost Komar</text></svg>');
-function serverCall(name,...args){return new Promise((resolve,reject)=>{if(!window.google||!google.script||!google.script.run){reject(new Error('Halaman ini harus dibuka melalui URL Web App Google Apps Script, bukan GitHub Pages.'));return;}google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:'Permintaan gagal.')))[name](...args);});}
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function notice(el,msg,ok=false){el.textContent=msg;el.classList.remove('hidden','ok');if(ok)el.classList.add('ok');}
-function hide(el){el.classList.add('hidden');}
-function openOverlay(id){$(id).classList.add('show');}
-function closeOverlay(id){$(id).classList.remove('show');}
-document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeOverlay(b.dataset.close)));
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeOverlay(o.id)}));
-$('year').textContent=new Date().getFullYear();
-$('homeBtn').addEventListener('click',e=>{e.preventDefault();$('publicView').classList.remove('hidden');$('adminView').classList.add('hidden');});
-$('adminBtn').addEventListener('click',()=>{$('publicView').classList.add('hidden');$('adminView').classList.remove('hidden');});
-$('backBtn').addEventListener('click',()=>{$('adminView').classList.add('hidden');$('publicView').classList.remove('hidden');});
-$('refresh').addEventListener('click',loadPublic);
-$('search').addEventListener('input',renderPublic);
-$('loginForm').addEventListener('submit',login);
-$('logoutBtn').addEventListener('click',logout);
-$('addBtn').addEventListener('click',()=>openForm());
-$('residentForm').addEventListener('submit',saveResidentForm);
-async function loadPublic(){
- $('status').classList.remove('hidden');$('status').textContent='Memuat daftar penghuni…';$('grid').innerHTML='';hide($('empty'));
- try{state.publicRows=await serverCall('getPublicResidents');$('count').textContent=state.publicRows.length;$('status').classList.add('hidden');renderPublic();}
- catch(e){$('status').textContent=e.message;}
-}
-function renderPublic(){
- const q=$('search').value.trim().toLocaleLowerCase('id');
- const rows=state.publicRows.filter(r=>(r.fullName+' '+r.roomNumber).toLocaleLowerCase('id').includes(q));
- $('grid').innerHTML=rows.map(r=>`<article class="card"><img class="photo" loading="lazy" src="${r.photoDataUrl||placeholder}" alt="Foto ${esc(r.fullName)}"><div class="card-body"><h3>${esc(r.fullName)}</h3><span class="room">Kamar ${esc(r.roomNumber)}</span>${r.description?`<p>${esc(r.description)}</p>`:''}<button class="btn" data-profile="${esc(r.id)}">Lihat profil</button></div></article>`).join('');
- $('grid').querySelectorAll('[data-profile]').forEach(b=>b.addEventListener('click',()=>showProfile(b.dataset.profile)));
- $('empty').classList.toggle('hidden',rows.length!==0);
-}
-function showProfile(id){const r=state.publicRows.find(x=>x.id===id);if(!r)return;$('detailBody').innerHTML=`<div class="profile"><img src="${r.photoDataUrl||placeholder}" alt="Foto ${esc(r.fullName)}"><div><span class="pill">Penghuni Kost Komar</span><h2>${esc(r.fullName)}</h2><span class="room">Kamar ${esc(r.roomNumber)}</span>${r.description?`<p class="muted">${esc(r.description)}</p>`:''}</div></div>`;openOverlay('detailOverlay');}
-async function login(e){
- e.preventDefault();const btn=$('loginSubmit');btn.disabled=true;btn.textContent='Memeriksa…';hide($('notice'));
- try{const result=await serverCall('loginAdmin',$('email').value,$('password').value);state.token=result.token;state.email=result.email;$('identity').textContent='Login sebagai '+state.email;$('loginPanel').classList.add('hidden');$('adminPanel').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');$('password').value='';await loadAdmin();}
- catch(err){notice($('notice'),err.message||'Login gagal.');}
- finally{btn.disabled=false;btn.textContent='Login';}
-}
-async function logout(){
- try{if(state.token)await serverCall('logoutAdmin',state.token);}catch(e){}
- state.token='';state.email='';state.adminRows=[];$('adminPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('logoutBtn').classList.add('hidden');$('identity').textContent='Login untuk mengelola penghuni.';$('email').value='';$('password').value='';notice($('notice'),'Anda telah keluar.'); 
-}
-async function loadAdmin(){
- $('adminListStatus').textContent='Memuat data…';$('adminList').innerHTML='';
- try{state.adminRows=await serverCall('adminListResidents',state.token);$('adminListStatus').textContent=state.adminRows.length+' data';renderAdmin();}
- catch(e){notice($('notice'),e.message);state.token='';$('adminPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('logoutBtn').classList.add('hidden');}
-}
-function renderAdmin(){
- $('adminList').innerHTML=state.adminRows.map(r=>`<div class="adminrow"><div><strong>${esc(r.fullName)}</strong><small>Kamar ${esc(r.roomNumber)} · ${r.status==='ACTIVE'?'Aktif':'Diarsipkan'} · ${r.published?'Publik':'Privat'} · ${r.hasPhoto?'Ada foto':'Tanpa foto'}</small></div><div class="rowbtns"><button class="btn" data-edit="${esc(r.id)}">Edit</button>${r.status==='ACTIVE'?`<button class="btn" data-archive="${esc(r.id)}">Arsip</button>`:''}<button class="btn danger" data-delete="${esc(r.id)}">Hapus</button></div></div>`).join('')||'<div class="empty">Belum ada data penghuni.</div>';
- $('adminList').querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openForm(b.dataset.edit)));
- $('adminList').querySelectorAll('[data-archive]').forEach(b=>b.addEventListener('click',()=>archiveOne(b.dataset.archive)));
- $('adminList').querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',()=>deleteOne(b.dataset.delete)));
-}
-function openForm(id=''){
- const r=state.adminRows.find(x=>x.id===id);$('residentForm').reset();hide($('formNotice'));$('residentId').value=r?r.id:'';$('formTitle').textContent=r?'Edit penghuni':'Tambah penghuni';
- $('fullName').value=r?r.fullName:'';$('roomNumber').value=r?r.roomNumber:'';$('description').value=r?r.description:'';$('statusSelect').value=r?r.status:'ACTIVE';$('published').checked=r?!!r.published:false;$('photo').value='';openOverlay('formOverlay');
-}
-async function saveResidentForm(e){
- e.preventDefault();if(!state.token)return;const btn=$('saveBtn');btn.disabled=true;btn.textContent='Menyimpan…';hide($('formNotice'));
- try{
-  const file=$('photo').files[0];let photo;
-  if(file){if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Format foto harus JPG, PNG, atau WebP.');if(file.size>1024*1024)throw new Error('Ukuran foto maksimal 1 MB.');photo={mimeType:file.type,fileName:file.name,base64:await fileToBase64(file)};}
-  const input={id:$('residentId').value,fullName:$('fullName').value,roomNumber:$('roomNumber').value,description:$('description').value,status:$('statusSelect').value,published:$('published').checked,photo};
-  await serverCall('saveResident',state.token,input);closeOverlay('formOverlay');notice($('notice'),'Data penghuni berhasil disimpan.',true);await loadAdmin();await loadPublic();
- }catch(err){notice($('formNotice'),err.message||'Data gagal disimpan.');}
- finally{btn.disabled=false;btn.textContent='Simpan';}
-}
-function fileToBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=()=>reject(new Error('Foto gagal dibaca.'));r.onload=()=>resolve(String(r.result).split(',')[1]||'');r.readAsDataURL(file);});}
-async function archiveOne(id){const r=state.adminRows.find(x=>x.id===id);if(!r||!confirm('Arsipkan '+r.fullName+'?'))return;try{await serverCall('archiveResident',state.token,id);notice($('notice'),'Penghuni diarsipkan.',true);await loadAdmin();await loadPublic();}catch(e){notice($('notice'),e.message);}}
-async function deleteOne(id){const r=state.adminRows.find(x=>x.id===id);if(!r||!confirm('Hapus permanen data '+r.fullName+' beserta foto?'))return;try{await serverCall('deleteResident',state.token,id);notice($('notice'),'Data dihapus.',true);await loadAdmin();await loadPublic();}catch(e){notice($('notice'),e.message);}}
-loadPublic();
-</script>
-</body></html>
+  <main>
+    <div class="frog" aria-hidden="true">🐸</div>
+    <span class="pill">Website resmi</span>
+    <h1>Kost Komar</h1>
+    <p>Profil penghuni dan pengelolaan admin berjalan melalui Google Apps Script agar koneksi ke Google Sheets dan Google Drive berfungsi dengan benar.</p>
+    <a class="btn" id="openApp" href="#">Buka Website Kost Komar</a>
+    <div class="error" id="configError" role="alert">
+      URL Web App belum dikonfigurasi. Buka file <code>config.js</code> di repository, lalu isi <code>appsScriptWebAppUrl</code> dengan URL deployment Apps Script yang valid dan berakhiran <code>/exec</code>.
+    </div>
+    <div class="help">Setelah website terbuka, tekan <strong>Login Admin</strong> untuk masuk menggunakan email dan password admin yang telah didaftarkan.</div>
+  </main>
+  <script>
+    (function () {
+      const url = String(window.KOST_KOMAR_CONFIG?.appsScriptWebAppUrl || "").trim();
+      const link = document.getElementById("openApp");
+      const error = document.getElementById("configError");
+      const valid = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(url);
+      if (valid) {
+        link.href = url;
+        link.target = "_self";
+      } else {
+        link.addEventListener("click", function (event) {
+          event.preventDefault();
+          error.style.display = "block";
+        });
+        error.style.display = "block";
+        link.setAttribute("aria-disabled", "true");
+        link.style.opacity = ".7";
+      }
+    })();
+  </script>
+</body>
+</html>
