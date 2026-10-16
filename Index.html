@@ -31,7 +31,6 @@
     @media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-grid{grid-template-columns:1fr}.hero-card{max-width:300px}.resident-photo{height:210px}}
     @media(max-width:540px){.container{width:min(100% - 24px,1120px)}.nav{min-height:64px}.brandmark{width:37px;height:37px}.nav-actions .btn{padding:9px 10px;font-size:.85rem}.hero{padding:35px 0 24px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.resident-photo{height:155px}.resident-body{padding:11px}.resident-body h3{font-size:.9rem}.resident-body p{font-size:.82rem}.resident-body .btn{font-size:.8rem;padding:9px 7px}.room{font-size:.72rem}.section-head{align-items:start;flex-direction:column}.toolbar{flex-direction:column}.profile-detail{grid-template-columns:1fr}.profile-detail img{max-height:300px;aspect-ratio:4/3}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.admin-row{grid-template-columns:1fr}.row-actions .btn{flex:1}.modal-content{padding:16px}.modal-head{padding:15px 16px}}
   </style>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -69,9 +68,13 @@
       <div id="adminNotice" class="notice hidden"></div>
       <div id="loginBox" class="hero-card">
         <h2 style="margin-top:0">Login pengelola</h2>
-        <p class="muted">Masuk dengan akun Google yang sudah diizinkan oleh pengelola sistem.</p>
-        <div id="googleButton"></div>
-        <p class="help">Akun yang tidak ada di daftar admin tidak akan mendapat akses pengelolaan.</p>
+        <p class="muted">Masuk menggunakan email dan password admin yang dibuat oleh pengelola.</p>
+        <form id="loginForm" style="display:grid;gap:12px;max-width:420px">
+          <div class="field"><label for="loginEmail">Email admin</label><input id="loginEmail" type="email" autocomplete="username" maxlength="254" required placeholder="admin@contoh.com"></div>
+          <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="14" maxlength="200" required placeholder="Password admin"></div>
+          <button class="btn btn-primary" type="submit" id="loginBtn">Login</button>
+        </form>
+        <p class="help">Password tidak disimpan di browser. Gunakan password unik dan panjang.</p>
       </div>
       <div id="adminContent" class="hidden">
         <div class="admin-summary"><div class="summary-card"><span class="muted">Total data</span><strong id="adminTotal">0</strong></div><div class="summary-card"><span class="muted">Aktif</span><strong id="adminActive">0</strong></div><div class="summary-card"><span class="muted">Dipublikasikan</span><strong id="adminPublished">0</strong></div></div>
@@ -102,8 +105,7 @@
   </div></div></div>
 
   <script>
-    const OAUTH_CLIENT_ID = <?!= JSON.stringify(oauthClientId) ?>;
-    const state = { idToken: '', email: '', residents: [], publicResidents: [] };
+    const state = { sessionToken: '', email: '', residents: [], publicResidents: [] };
     const $ = id => document.getElementById(id);
     const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const placeholderPhoto = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="450"><rect width="100%" height="100%" fill="#e8f5eb"/><circle cx="300" cy="165" r="76" fill="#b7d9bf"/><path d="M145 430c8-105 69-157 155-157s147 52 155 157" fill="#b7d9bf"/><text x="300" y="410" font-size="20" text-anchor="middle" fill="#166534" font-family="Arial">Kost Komar</text></svg>');
@@ -126,33 +128,26 @@
     $('searchInput').addEventListener('input', renderPublicResidents);
     $('adminSearch').addEventListener('input', renderAdminResidents);
     $('addResidentBtn').addEventListener('click', () => openResidentForm());
-    $('logoutBtn').addEventListener('click', () => { state.idToken=''; state.email=''; state.residents=[]; $('adminContent').classList.add('hidden'); $('loginBox').classList.remove('hidden'); $('adminEmailLine').textContent='Kelola data penghuni Kost Komar.'; showNotice($('adminNotice'),'Anda telah keluar dari dashboard.','success'); });
+    $('logoutBtn').addEventListener('click', () => { const token=state.sessionToken; state.sessionToken=''; state.email=''; state.residents=[]; try { if(token) await serverCall('logoutAdmin',token); } catch(e) {} $('loginPassword').value=''; $('adminContent').classList.add('hidden'); $('loginBox').classList.remove('hidden'); $('adminEmailLine').textContent='Kelola data penghuni Kost Komar.'; showNotice($('adminNotice'),'Anda telah keluar dari dashboard.','success'); });
     $('residentForm').addEventListener('submit', submitResidentForm);
 
     function showPublic() { $('publicView').classList.remove('hidden'); $('adminView').classList.add('hidden'); window.scrollTo({top:0,behavior:'smooth'}); }
-    function showAdmin() { $('publicView').classList.add('hidden'); $('adminView').classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); hideNotice($('adminNotice')); if (state.idToken) loadAdminResidents(); else initializeGoogleLogin(); }
+    function showAdmin() { $('publicView').classList.add('hidden'); $('adminView').classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); hideNotice($('adminNotice')); if (state.sessionToken) loadAdminResidents(); else initializeGoogleLogin(); }
     function initializeGoogleLogin() {
-      if (!OAUTH_CLIENT_ID) { showNotice($('adminNotice'),'Login belum dikonfigurasi. Pengelola perlu mengatur Script Property GOOGLE_OAUTH_CLIENT_ID.'); return; }
-      const waitForGoogle = () => {
-        if (window.google && google.accounts && google.accounts.id) {
-          google.accounts.id.initialize({client_id:OAUTH_CLIENT_ID, callback:handleGoogleCredential, auto_select:false});
-          google.accounts.id.renderButton($('googleButton'), {theme:'outline',size:'large',shape:'pill',text:'signin_with',locale:'id'});
-        } else setTimeout(waitForGoogle,250);
-      };
-      waitForGoogle();
+      $('loginEmail').focus();
     }
-    async function handleGoogleCredential(response) {
+    $('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn=$('loginBtn'); btn.disabled=true; btn.textContent='Memverifikasi…'; hideNotice($('adminNotice'));
       try {
-        const result = await serverCall('verifyAdmin', response.credential);
-        state.idToken = response.credential; state.email = result.email;
-        $('adminEmailLine').textContent = 'Login sebagai ' + result.email;
-        $('loginBox').classList.add('hidden'); $('adminContent').classList.remove('hidden'); hideNotice($('adminNotice'));
-        await loadAdminResidents();
-      } catch (err) {
-        state.idToken=''; state.email='';
-        showNotice($('adminNotice'),err.message || 'Login ditolak.');
-      }
-    }
+        const result=await serverCall('loginAdmin',$('loginEmail').value,$('loginPassword').value);
+        state.sessionToken=result.token; state.email=result.email; $('loginPassword').value='';
+        $('adminEmailLine').textContent='Login sebagai '+result.email;
+        $('loginBox').classList.add('hidden'); $('adminContent').classList.remove('hidden');
+        hideNotice($('adminNotice')); await loadAdminResidents();
+      } catch(err) { showNotice($('adminNotice'),err.message||'Login gagal.'); }
+      finally { btn.disabled=false; btn.textContent='Login'; }
+    });
     async function loadPublicResidents() {
       $('publicStatus').classList.remove('hidden'); $('publicStatus').innerHTML='<span class="spinner"></span> Memuat daftar penghuni…';
       $('residentGrid').innerHTML=''; $('emptyState').classList.add('hidden');
@@ -180,7 +175,7 @@
     async function loadAdminResidents() {
       $('adminListStatus').classList.remove('hidden'); $('adminList').innerHTML='';
       try {
-        state.residents = await serverCall('adminListResidents', state.idToken);
+        state.residents = await serverCall('adminListResidents', state.sessionToken);
         $('adminListStatus').classList.add('hidden');
         $('adminTotal').textContent = state.residents.length;
         $('adminActive').textContent = state.residents.filter(r=>r.status==='ACTIVE').length;
@@ -189,7 +184,7 @@
       } catch(err) {
         $('adminListStatus').classList.add('hidden');
         showNotice($('adminNotice'),err.message || 'Sesi admin tidak valid. Silakan login kembali.');
-        state.idToken=''; $('adminContent').classList.add('hidden'); $('loginBox').classList.remove('hidden');
+        state.sessionToken=''; $('adminContent').classList.add('hidden'); $('loginBox').classList.remove('hidden');
       }
     }
     function renderAdminResidents() {
@@ -202,7 +197,7 @@
       $('adminList').querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',()=>deleteOne(b.dataset.delete)));
     }
     function openResidentForm(id='') {
-      if (!state.idToken) return;
+      if (!state.sessionToken) return;
       const r = state.residents.find(x=>x.id===id);
       $('residentForm').reset(); hideNotice($('formNotice')); $('residentId').value=r?r.id:'';
       $('formTitle').textContent=r?'Edit penghuni':'Tambah penghuni';
@@ -212,7 +207,7 @@
       showOverlay('formOverlay');
     }
     async function submitResidentForm(e) {
-      e.preventDefault(); if (!state.idToken) return;
+      e.preventDefault(); if (!state.sessionToken) return;
       const btn=$('saveBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Menyimpan…'; hideNotice($('formNotice'));
       try {
         const file = $('photo').files[0]; let photo;
@@ -222,7 +217,7 @@
           photo = {mimeType:file.type, fileName:file.name, base64:await fileToBase64(file)};
         }
         const input = {id:$('residentId').value,fullName:$('fullName').value,roomNumber:$('roomNumber').value,description:$('description').value,status:$('status').value,published:$('published').checked,photo};
-        await serverCall('saveResident',state.idToken,input);
+        await serverCall('saveResident',state.sessionToken,input);
         closeOverlay('formOverlay'); showNotice($('adminNotice'),'Data penghuni berhasil disimpan.','success'); await loadAdminResidents(); await loadPublicResidents();
       } catch(err) { showNotice($('formNotice'),err.message || 'Data gagal disimpan.'); }
       finally { btn.disabled=false; btn.textContent='Simpan data'; }
@@ -232,17 +227,17 @@
     }
     async function archiveOne(id) {
       const r=state.residents.find(x=>x.id===id); if(!r||!confirm('Arsipkan '+r.fullName+'? Profil tidak lagi tampil di website publik.'))return;
-      try { await serverCall('archiveResident',state.idToken,id); showNotice($('adminNotice'),'Penghuni berhasil diarsipkan.','success'); await loadAdminResidents(); await loadPublicResidents(); }
+      try { await serverCall('archiveResident',state.sessionToken,id); showNotice($('adminNotice'),'Penghuni berhasil diarsipkan.','success'); await loadAdminResidents(); await loadPublicResidents(); }
       catch(err){showNotice($('adminNotice'),err.message||'Gagal mengarsipkan penghuni.');}
     }
     async function restoreOne(id) {
       const r=state.residents.find(x=>x.id===id); if(!r)return;
-      try { await serverCall('saveResident',state.idToken,{id:r.id,fullName:r.fullName,roomNumber:r.roomNumber,description:r.description,status:'ACTIVE',published:false}); showNotice($('adminNotice'),'Penghuni diaktifkan kembali. Publikasi tetap nonaktif sampai disetujui.','success'); await loadAdminResidents(); }
+      try { await serverCall('saveResident',state.sessionToken,{id:r.id,fullName:r.fullName,roomNumber:r.roomNumber,description:r.description,status:'ACTIVE',published:false}); showNotice($('adminNotice'),'Penghuni diaktifkan kembali. Publikasi tetap nonaktif sampai disetujui.','success'); await loadAdminResidents(); }
       catch(err){showNotice($('adminNotice'),err.message||'Gagal mengaktifkan penghuni.');}
     }
     async function deleteOne(id) {
       const r=state.residents.find(x=>x.id===id); if(!r||!confirm('Hapus permanen data '+r.fullName+' beserta foto yang dikelola sistem? Tindakan ini tidak dapat dibatalkan.'))return;
-      try { await serverCall('deleteResident',state.idToken,id); showNotice($('adminNotice'),'Data penghuni berhasil dihapus.','success'); await loadAdminResidents(); await loadPublicResidents(); }
+      try { await serverCall('deleteResident',state.sessionToken,id); showNotice($('adminNotice'),'Data penghuni berhasil dihapus.','success'); await loadAdminResidents(); await loadPublicResidents(); }
       catch(err){showNotice($('adminNotice'),err.message||'Gagal menghapus data.');}
     }
     loadPublicResidents();

@@ -4,11 +4,10 @@
  *
  * First run setupKostKomar() from the Apps Script editor.
  * Set Script Properties:
- *   GOOGLE_OAUTH_CLIENT_ID = OAuth Web Client ID from Google Cloud Console
  *   ADMIN_EMAILS = admin1@example.com,admin2@example.com
  *
  * Deploy as Web App: Execute as ME; Who has access: Anyone.
- * Admin endpoints verify Google Identity Services ID tokens server-side.
+ * Admin endpoints verify email/password authentication ID tokens server-side.
  */
 
 const APP = {
@@ -27,13 +26,12 @@ const RESIDENT_HEADERS = [
   'id', 'fullName', 'roomNumber', 'description', 'status',
   'published', 'consentAt', 'photoFileId', 'createdAt', 'updatedAt'
 ];
-const ADMIN_HEADERS = ['email', 'active', 'addedAt'];
+const ADMIN_HEADERS = ['email', 'active', 'salt', 'passwordHash', 'iterations', 'addedAt'];
 const AUDIT_HEADERS = ['timestamp', 'adminEmail', 'action', 'residentId', 'details'];
 
 function doGet() {
   const template = HtmlService.createTemplateFromFile('Index');
   template.appTitle = APP.title;
-  template.oauthClientId = PropertiesService.getScriptProperties().getProperty('GOOGLE_OAUTH_CLIENT_ID') || '';
   return template.evaluate()
     .setTitle(APP.title + ' — Profil Penghuni')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -73,7 +71,7 @@ function setupKostKomar() {
   Logger.log('Setup selesai.');
   Logger.log('Spreadsheet: ' + ss.getUrl());
   Logger.log('Photo folder ID (keep private): ' + photoFolderId);
-  Logger.log('Tambahkan email admin pada sheet "' + APP.adminsSheet + '" dan Script Properties.');
+  Logger.log('Buat akun admin dengan menjalankan setAdminPassword(email, password) dari editor.');
 }
 
 function ensureSheet_(ss, name, headers) {
@@ -120,14 +118,103 @@ function getPublicResident(id) {
   };
 }
 
-/** Verify a Google Identity Services ID token against Google's tokeninfo endpoint and allowlist. */
-function verifyAdmin(idToken) {
-  const identity = requireAdmin_(idToken);
-  return { ok: true, email: identity.email };
+/**
+ * Run manually from Apps Script editor to create/reset an admin password.
+ * Example: setAdminPassword('admin@example.com', 'use-a-unique-password-14-chars-or-more')
+ * Never call this function from the public UI or leave a real password in source code.
+ */
+function setAdminPassword(email, password) {
+  email = String(email || '').trim().toLowerCase();
+  password = String(password || '');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('Format email tidak valid.');
+  if (password.length < 14 || password.length > 200) throw new Error('Password harus 14–200 karakter.');
+  const sh = getSheet_(APP.adminsSheet);
+  const row = findAdminRow_(sh, email);
+  const salt = Utilities.getUuid() + Utilities.getUuid();
+  const iterations = 20000;
+  const hash = passwordHash_(password, salt, iterations);
+  const values = [email, true, salt, hash, iterations, new Date().toISOString()];
+  if (row) sh.getRange(row, 1, 1, ADMIN_HEADERS.length).setValues([values]);
+  else sh.appendRow(values);
+  Logger.log('Password admin disetel untuk ' + email + '. Jangan simpan password di source code.');
 }
 
-function adminListResidents(idToken) {
-  const identity = requireAdmin_(idToken);
+function loginAdmin(email, password) {
+  email = String(email || '').trim().toLowerCase();
+  password = String(password || '');
+  if (email.length > 254 || password.length > 200 || !email || !password) throw new Error('Email atau password salah.');
+  const sh = getSheet_(APP.adminsSheet);
+  const row = findAdminRow_(sh, email);
+  if (!row) {
+    passwordHash_(password, 'dummy-salt-for-timing', 20000);
+    throw new Error('Email atau password salah.');
+  }
+  const data = sh.getRange(row, 1, 1, ADMIN_HEADERS.length).getValues()[0];
+  const active = data[1] === true || String(data[1]).toUpperCase() === 'TRUE' || String(data[1]).toUpperCase() === 'ACTIVE';
+  const salt = String(data[2] || '');
+  const expected = String(data[3] || '');
+  const iterations = Math.max(10000, Math.min(50000, Number(data[4]) || 20000));
+  const actual = passwordHash_(password, salt, iterations);
+  if (!active || !salt || !expected || !constantTimeEquals_(actual, expected)) throw new Error('Email atau password salah.');
+  const token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  CacheService.getScriptCache().put('admin-session:' + token, JSON.stringify({email:email, createdAt:Date.now()}), 1800);
+  audit_(email, 'ADMIN_LOGIN', '', 'Admin login successful');
+  return {ok:true, token:token, email:email, expiresInSeconds:1800};
+}
+
+function logoutAdmin(sessionToken) {
+  const token = validateTokenShape_(sessionToken);
+  CacheService.getScriptCache().remove('admin-session:' + token);
+  return {ok:true};
+}
+
+function requireAdmin_(sessionToken) {
+  const token = validateTokenShape_(sessionToken);
+  const raw = CacheService.getScriptCache().get('admin-session:' + token);
+  if (!raw) throw new Error('Sesi berakhir. Silakan login kembali.');
+  let session;
+  try { session = JSON.parse(raw); } catch (e) { throw new Error('Sesi tidak valid. Silakan login kembali.'); }
+  const email = String(session.email || '').trim().toLowerCase();
+  const sh = getSheet_(APP.adminsSheet);
+  const row = findAdminRow_(sh, email);
+  if (!row) throw new Error('Akun admin tidak lagi diizinkan.');
+  const data = sh.getRange(row, 1, 1, ADMIN_HEADERS.length).getValues()[0];
+  const active = data[1] === true || String(data[1]).toUpperCase() === 'TRUE' || String(data[1]).toUpperCase() === 'ACTIVE';
+  if (!active) throw new Error('Akun admin tidak lagi aktif.');
+  return {email:email};
+}
+
+function validateTokenShape_(token) {
+  token = String(token || '');
+  if (!/^[a-f0-9]{64}$/.test(token)) throw new Error('Login admin diperlukan.');
+  return token;
+}
+
+function findAdminRow_(sh, email) {
+  if (sh.getLastRow() < 2) return 0;
+  const values = sh.getRange(2, 1, sh.getLastRow()-1, 1).getValues();
+  for (let i=0; i<values.length; i++) if (String(values[i][0] || '').trim().toLowerCase() === email) return i+2;
+  return 0;
+}
+
+function passwordHash_(password, salt, iterations) {
+  // Salted iterative SHA-256; see README for production limitations.
+  let value = salt + ':' + password;
+  for (let i=0; i<iterations; i++) {
+    value = Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8));
+  }
+  return value;
+}
+
+function constantTimeEquals_(a,b) {
+  a=String(a||''); b=String(b||'');
+  let diff=a.length ^ b.length; const n=Math.max(a.length,b.length);
+  for(let i=0;i<n;i++) diff |= (a.charCodeAt(i)||0) ^ (b.charCodeAt(i)||0);
+  return diff===0;
+}
+
+function adminListResidents(sessionToken) {
+  const identity = requireAdmin_(sessionToken);
   audit_(identity.email, 'LIST_RESIDENTS', '', 'Admin opened resident list');
   return getResidents_().map(r => ({
     id: r.id,
@@ -147,8 +234,8 @@ function adminListResidents(idToken) {
  * Save resident. For a new photo, pass photo = {mimeType, base64, fileName}.
  * Existing photo remains unchanged if photo is omitted.
  */
-function saveResident(idToken, input) {
-  const identity = requireAdmin_(idToken);
+function saveResident(sessionToken, input) {
+  const identity = requireAdmin_(sessionToken);
   if (!input || typeof input !== 'object') throw new Error('Data penghuni tidak valid.');
 
   const fullName = cleanString_(input.fullName, APP.maxNameLength);
@@ -205,13 +292,13 @@ function saveResident(idToken, input) {
   }
 }
 
-function archiveResident(idToken, id) {
-  const identity = requireAdmin_(idToken);
+function archiveResident(sessionToken, id) {
+  const identity = requireAdmin_(sessionToken);
   return setResidentStatus_(identity.email, id, 'ARCHIVED');
 }
 
-function deleteResident(idToken, id) {
-  const identity = requireAdmin_(idToken);
+function deleteResident(sessionToken, id) {
+  const identity = requireAdmin_(sessionToken);
   id = cleanString_(id, 80);
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
@@ -247,48 +334,6 @@ function setResidentStatus_(email, id, status) {
   } finally {
     lock.releaseLock();
   }
-}
-
-function requireAdmin_(idToken) {
-  if (typeof idToken !== 'string' || idToken.length < 100 || idToken.length > 10000) {
-    throw new Error('Login Google diperlukan.');
-  }
-  const clientId = PropertiesService.getScriptProperties().getProperty('GOOGLE_OAUTH_CLIENT_ID');
-  if (!clientId) throw new Error('GOOGLE_OAUTH_CLIENT_ID belum dikonfigurasi oleh pengelola.');
-
-  let response;
-  try {
-    response = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken), {
-      muteHttpExceptions: true,
-      followRedirects: false
-    });
-  } catch (e) {
-    throw new Error('Tidak dapat memverifikasi akun Google. Coba lagi.');
-  }
-  if (response.getResponseCode() !== 200) throw new Error('Token login tidak valid atau kedaluwarsa.');
-
-  const claims = JSON.parse(response.getContentText());
-  if (String(claims.aud || '') !== clientId) throw new Error('Token bukan untuk aplikasi ini.');
-  if (String(claims.email_verified || '') !== 'true') throw new Error('Email Google belum terverifikasi.');
-  const expiresAt = Number(claims.exp || 0);
-  if (!expiresAt || expiresAt * 1000 <= Date.now()) throw new Error('Sesi login telah kedaluwarsa.');
-
-  const email = String(claims.email || '').trim().toLowerCase();
-  if (!email || !isAllowedAdmin_(email)) throw new Error('Akun Google ini tidak memiliki akses admin.');
-  return { email: email };
-}
-
-function isAllowedAdmin_(email) {
-  const sh = getSheet_(APP.adminsSheet);
-  if (sh.getLastRow() > 1) {
-    const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues();
-    if (rows.some(r => String(r[0]).trim().toLowerCase() === email && (r[1] === true || String(r[1]).toUpperCase() === 'TRUE' || String(r[1]).toUpperCase() === 'ACTIVE'))) {
-      return true;
-    }
-  }
-  const propEmails = (PropertiesService.getScriptProperties().getProperty('ADMIN_EMAILS') || '')
-    .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-  return propEmails.indexOf(email) !== -1;
 }
 
 function getResidents_() {

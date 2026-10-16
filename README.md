@@ -1,6 +1,6 @@
 # Website Profil Penghuni — Kost Komar
 
-Implementasi Google Apps Script + Google Sheets + Google Drive. Halaman publik tidak memerlukan login. Operasi admin memerlukan Google Identity Services ID token yang diverifikasi server-side dan email yang terdaftar pada allowlist.
+Implementasi Google Apps Script + Google Sheets + Google Drive. Halaman publik tidak memerlukan login. Operasi admin memerlukan email/password authentication ID token yang diverifikasi server-side dan email yang terdaftar pada allowlist.
 
 ## Berkas
 - `Code.gs`: backend, skema Sheets, autentikasi, validasi, Drive, audit log.
@@ -23,24 +23,19 @@ Implementasi Google Apps Script + Google Sheets + Google Drive. Halaman publik t
    Gunakan email yang benar-benar dimiliki admin. Jangan menambahkan email publik yang tidak dipercaya.
 9. Simpan spreadsheet dan folder foto secara privat. Jangan aktifkan "Anyone with the link" pada spreadsheet atau folder foto.
 
-## Konfigurasi Google Identity Services
-Admin login memakai Google Identity Services. ID token dikirim ke Apps Script dan diverifikasi menggunakan endpoint tokeninfo Google, lalu email diperiksa terhadap sheet `Admins` atau Script Property `ADMIN_EMAILS`.
+## Membuat akun admin (email/password)
+1. Jalankan `setupKostKomar()` sekali dari editor Apps Script.
+2. Sheet `Admins` menggunakan header: `email | active | salt | passwordHash | iterations | addedAt`.
+3. Dari editor Apps Script, jalankan `setAdminPassword('admin@contoh.com', 'PASSWORD_UNIK_MINIMAL_14_KARAKTER')` dengan email milik pengelola dan password unik minimal 14 karakter.
+4. Jangan simpan password nyata di kode permanen, chat, atau file proyek. Hapus pemanggilan sementara setelah dijalankan.
+5. Password disimpan sebagai hash bersalt, bukan teks biasa. Untuk reset, jalankan kembali `setAdminPassword(email, passwordBaru)`.
+6. Batasi akses editor Apps Script dan spreadsheet hanya kepada pengelola tepercaya.
 
-1. Buka Google Cloud Console: https://console.cloud.google.com/
-2. Buat atau pilih project Google Cloud.
-3. Konfigurasikan OAuth consent screen / Google Auth Platform. Isi nama aplikasi dan email dukungan yang benar.
-4. Buat OAuth Client ID bertipe **Web application**.
-5. Pada Authorized JavaScript origins, masukkan origin `https://script.google.com`. Jika login gagal karena origin tidak cocok pada deployment akun Anda, periksa origin yang ditampilkan browser dan tambahkan hanya origin Google Apps Script yang relevan.
-6. Salin Client ID.
-7. Di Apps Script → Project Settings → Script Properties, tambahkan:
-   - `GOOGLE_OAUTH_CLIENT_ID` = Client ID OAuth Web
-   - `ADMIN_EMAILS` = daftar email admin dipisahkan koma (opsional; sheet Admins juga didukung)
-8. Jangan menaruh OAuth client secret di frontend. Untuk Google Identity Services ID token, client ID memang digunakan di frontend; server tetap memverifikasi token dan allowlist.
-
-Catatan: konfigurasi OAuth dan aturan akun Google dapat berbeda untuk akun Workspace dan akun Gmail pribadi. Jika Google menolak origin atau aplikasi berada dalam mode testing, tambahkan akun admin sebagai test user atau sesuaikan status publikasi OAuth consent screen. Jangan menonaktifkan pemeriksaan token untuk mengatasi error.
+**Batasan keamanan:** kode memakai salted iterative SHA-256 dan sesi CacheService 30 menit. Ini menghindari password teks biasa, tetapi bukan pengganti autentikasi produksi berbasis Argon2id/scrypt/bcrypt dan proteksi brute-force terkelola. CacheService dapat menghapus sesi lebih awal. Untuk risiko tinggi, gunakan penyedia autentikasi khusus.
 
 ## Deploy
-1. Pastikan `GOOGLE_OAUTH_CLIENT_ID`, `SPREADSHEET_ID`, dan `PHOTO_FOLDER_ID` ada di Script Properties. Dua ID terakhir dibuat oleh `setupKostKomar()`.
+1. Pastikan `SPREADSHEET_ID` dan `PHOTO_FOLDER_ID` ada di Script Properties. Dua ID terakhir dibuat oleh `setupKostKomar()`.
+2. Jika sebelumnya sudah menjalankan versi Google Identity Services, periksa sheet `Admins`. Ganti header menjadi `email | active | salt | passwordHash | iterations | addedAt` sebelum menjalankan versi baru; buat ulang sheet `Admins` jika masih berisi skema lama. Setel password admin melalui `setAdminPassword()`.
 2. Klik Deploy → New deployment → Select type: Web app.
 3. Execute as: **Me** (akun pengelola yang memiliki spreadsheet dan folder foto).
 4. Who has access: **Anyone** untuk halaman direktori publik.
@@ -52,7 +47,7 @@ Catatan: konfigurasi OAuth dan aturan akun Google dapat berbeda untuk akun Works
 `id, fullName, roomNumber, description, status, published, consentAt, photoFileId, createdAt, updatedAt`
 
 ### Admins
-`email, active, addedAt`
+`email, active, salt, passwordHash, iterations, addedAt`
 
 ### AuditLog
 `timestamp, adminEmail, action, residentId, details`
@@ -72,10 +67,10 @@ Catatan: konfigurasi OAuth dan aturan akun Google dapat berbeda untuk akun Works
 ## Batasan dan catatan keamanan
 - Foto publik dikirim sebagai data URL base64 hanya untuk profil aktif yang `published=TRUE`. Folder Drive tidak perlu dibagikan publik. Foto 1 MB dibatasi untuk mengurangi waktu dan ukuran respons.
 - Apps Script memiliki kuota eksekusi, batas durasi, dan batas layanan Google. Untuk jumlah penghuni besar atau trafik tinggi, pertimbangkan backend khusus dan object storage.
-- Endpoint tokeninfo menambah ketergantungan jaringan. Jika verifikasi gagal, operasi admin harus gagal tertutup.
+- Login memakai hash password dan sesi CacheService; jika sesi hilang atau kedaluwarsa, admin harus login kembali.
 - Apps Script web app publik yang berjalan sebagai pemilik harus memvalidasi setiap fungsi admin di server. Jangan mengandalkan UI tersembunyi.
-- Token ID hanya disimpan di memori halaman dan tidak ditulis ke localStorage. Saat logout, token dihapus dari state halaman. Tutup halaman untuk mengakhiri sesi browser sepenuhnya.
-- Google Identity Services memerlukan OAuth client ID yang benar dan pengaturan origin yang cocok. Uji deployment pada URL yang sebenarnya.
+- Token sesi hanya disimpan di memori halaman, tidak ditulis ke localStorage, dan dihapus dari CacheService saat logout.
+- email/password authentication memerlukan OAuth client ID yang benar dan pengaturan origin yang cocok. Uji deployment pada URL yang sebenarnya.
 - Data foto yang diarsipkan tidak otomatis dihapus. Penghapusan permanen mengirim file foto ke Trash; pastikan kebijakan retensi cocok dengan kebutuhan kost.
 - `Admins` sheet hanya boleh diedit pengelola tepercaya. Hak akses spreadsheet harus dibatasi.
 - Untuk produksi, pertimbangkan kebijakan privasi, prosedur penarikan persetujuan, backup, dan pembatasan akses ke akun Google pengelola.
