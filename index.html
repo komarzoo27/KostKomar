@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#176b45">
+  <title>Kost Komar — Website Penghuni</title>
+  <style>
+    :root{color-scheme:light;--green:#176b45;--dark:#123b2b;--muted:#66756d;--bg:#f4f8f5}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at top right,#d9efe1,transparent 38%),var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--dark)}
+    main{width:min(100%,560px);padding:clamp(24px,6vw,48px);background:#fff;border:1px solid #e0e9e3;border-radius:28px;box-shadow:0 22px 60px #153b2b12;text-align:center}
+    .mark{width:72px;height:72px;margin:0 auto 18px;border-radius:22px;display:grid;place-items:center;background:#e6f5eb;color:var(--green);font-size:38px;font-weight:800}
+    h1{margin:0;font-size:clamp(28px,6vw,40px);letter-spacing:-.04em}
+    p{color:var(--muted);line-height:1.7;margin:14px 0 24px}
+    a{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;border-radius:14px;background:var(--green);color:white;text-decoration:none;font-weight:700}
+    a:hover{background:#105536}
+    .note{margin-top:22px;font-size:13px;color:#829087}
+    #setup{display:none;margin-top:20px;padding:14px;border-radius:12px;background:#fff4e5;color:#784a0b;font-size:14px;line-height:1.5}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true">K</div>
+    <h1>Kost Komar</h1>
+    <p>Direktori penghuni dan informasi Kost Komar. Tekan tombol di bawah untuk membuka website utama.</p>
+    <a id="openApp" href="#" rel="noopener">Buka Website <span aria-hidden="true">→</span></a>
+    <div id="setup">Website utama belum dikonfigurasi. Buka file <strong>index.html</strong> di GitHub, pilih <strong>Edit</strong>, lalu ganti nilai <code>APP_URL</code> dengan URL Google Apps Script Web App yang berakhiran <code>/exec</code>.</div>
+    <div class="note">Kost Komar · Website resmi penghuni</div>
+  </main>
+  <script>
+    // Ganti dengan URL deployment Google Apps Script yang berakhiran /exec.
+    // Contoh format: https://script.google.com/macros/s/DEPLOYMENT_ID/exec
+    const APP_URL = "PASTE_APPS_SCRIPT_WEB_APP_EXEC_URL_HERE";
+    const link = document.getElementById("openApp");
+    const setup = document.getElementById("setup");
+    if (/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(APP_URL)) {
+      link.href = APP_URL;
+    } else {
+      link.href = "#";
+      link.addEventListener("click", event => { event.preventDefault(); setup.style.display = "block"; });
+    }
+  </script>
+</body>
+</html>
